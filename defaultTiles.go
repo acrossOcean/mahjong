@@ -1,8 +1,7 @@
 package main
 
-// DefaultAllTiles return a TileList contain all tiles
-func DefaultAllTiles() TileList {
-	var allTiles = []Tile{
+func DefaultAllDot() TileList {
+	var result = []Tile{
 		Tile{
 			tileType: TileTypeDot,
 			tileNum:  1,
@@ -39,6 +38,13 @@ func DefaultAllTiles() TileList {
 			tileType: TileTypeDot,
 			tileNum:  9,
 		},
+	}
+
+	return result
+}
+
+func DefaultAllBamboo() TileList {
+	var result = []Tile{
 		Tile{
 			tileType: TileTypeBamboo,
 			tileNum:  1,
@@ -75,6 +81,13 @@ func DefaultAllTiles() TileList {
 			tileType: TileTypeBamboo,
 			tileNum:  9,
 		},
+	}
+
+	return result
+}
+
+func DefaultAllCharacter() TileList {
+	var result = []Tile{
 		Tile{
 			tileType: TileTypeCharacter,
 			tileNum:  1,
@@ -111,6 +124,32 @@ func DefaultAllTiles() TileList {
 			tileType: TileTypeCharacter,
 			tileNum:  9,
 		},
+	}
+
+	return result
+}
+
+func DefaultAllDragon() TileList {
+	var result = []Tile{
+		Tile{
+			tileType: TileTypeDragon,
+			tileNum:  1,
+		},
+		Tile{
+			tileType: TileTypeDragon,
+			tileNum:  2,
+		},
+		Tile{
+			tileType: TileTypeDragon,
+			tileNum:  3,
+		},
+	}
+
+	return result
+}
+
+func DefaultAllWinds() TileList {
+	var result = []Tile{
 		Tile{
 			tileType: TileTypeWind,
 			tileNum:  1,
@@ -127,18 +166,13 @@ func DefaultAllTiles() TileList {
 			tileType: TileTypeWind,
 			tileNum:  4,
 		},
-		Tile{
-			tileType: TileTypeDragon,
-			tileNum:  1,
-		},
-		Tile{
-			tileType: TileTypeDragon,
-			tileNum:  2,
-		},
-		Tile{
-			tileType: TileTypeDragon,
-			tileNum:  3,
-		},
+	}
+
+	return result
+}
+
+func DefaultAllFlower() TileList {
+	var result = []Tile{
 		Tile{
 			tileType: TileTypeFlower,
 			tileNum:  1,
@@ -155,6 +189,13 @@ func DefaultAllTiles() TileList {
 			tileType: TileTypeFlower,
 			tileNum:  4,
 		},
+	}
+
+	return result
+}
+
+func DefaultAllSeason() TileList {
+	var result = []Tile{
 		Tile{
 			tileType: TileTypeSeason,
 			tileNum:  1,
@@ -173,5 +214,17 @@ func DefaultAllTiles() TileList {
 		},
 	}
 
-	return allTiles
+	return result
+}
+
+// DefaultAllTiles return a TileList contain all tiles
+func DefaultAllTiles() TileList {
+	result := append(DefaultAllDot(), DefaultAllBamboo()...)
+	result = append(result, DefaultAllCharacter()...)
+	result = append(result, DefaultAllDragon()...)
+	result = append(result, DefaultAllWinds()...)
+	result = append(result, DefaultAllFlower()...)
+	result = append(result, DefaultAllSeason()...)
+
+	return result
 }
