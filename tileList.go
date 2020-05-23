@@ -50,18 +50,20 @@ func (receiver TileList) GetOneFromEnd() (Tile, TileList) {
 }
 
 //GetFromHead get n tiles from list, and remove from list
-func (receiver TileList) GetFromHead(n int) ([]Tile, TileList) {
+func (receiver TileList) GetFromHead(n int) (TileList, TileList) {
 	return receiver.getTiles(n, true)
 }
 
 //GetFromEnd get n tiles from end of this list, and remove from list
-func (receiver TileList) GetFromEnd(n int) ([]Tile, TileList) {
+func (receiver TileList) GetFromEnd(n int) (TileList, TileList) {
 	return receiver.getTiles(n, false)
 }
 
 //GetTiles get n tiles from head (if isHead is true) or end of this list, and remove from list
-func (receiver TileList) getTiles(n int, isHead bool) ([]Tile, TileList) {
-	if n > receiver.Len() {
+func (receiver TileList) getTiles(n int, isHead bool) (TileList, TileList) {
+	if n < 0 {
+		n = 0
+	} else if n > receiver.Len() {
 		n = receiver.Len()
 	}
 
