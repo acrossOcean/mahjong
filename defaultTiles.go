@@ -223,8 +223,10 @@ func DefaultAllTiles() TileList {
 	result = append(result, DefaultAllCharacter()...)
 	result = append(result, DefaultAllDragon()...)
 	result = append(result, DefaultAllWinds()...)
-	result = append(result, DefaultAllFlower()...)
-	result = append(result, DefaultAllSeason()...)
+
+	//TODO: 之后再加上花牌和补花功能
+	//result = append(result, DefaultAllFlower()...)
+	//result = append(result, DefaultAllSeason()...)
 
 	return result
 }
