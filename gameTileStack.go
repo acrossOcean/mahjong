@@ -25,3 +25,17 @@ func (receiver *GameTileStack) Shuffle() {
 	result := receiver.list.Shuffle()
 	receiver.list = result
 }
+
+func (receiver *GameTileStack) GetFromHead(n int) TileList{
+	result, list := receiver.list.GetFromHead(n)
+	receiver.list = list
+
+	return result
+}
+
+func (receiver *GameTileStack)GetFromEnd(n int)TileList{
+	result, list := receiver.list.GetFromEnd(n)
+	receiver.list = list
+
+	return result
+}
