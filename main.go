@@ -2,16 +2,16 @@ package main
 
 func main() {
 	gm := NewGameManager()
-	p1 := new(CommonGamePlayer)
+	p1 := NewAI(gm)
 	gm.AddPlayer(p1)
 
-	p2 := new(CommonGamePlayer)
+	p2 := NewAI(gm)
 	gm.AddPlayer(p2)
 
-	p3 := new(CommonGamePlayer)
+	p3 := NewAI(gm)
 	gm.AddPlayer(p3)
 
-	p4 := new(CommonGamePlayer)
+	p4 := NewAI(gm)
 	gm.AddPlayer(p4)
 
 	gm.NewGame()

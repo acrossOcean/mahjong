@@ -26,6 +26,7 @@ func NewGameManager() *GameManager {
 	result := new(GameManager)
 	result.currentDealerIndex = -1
 	result.tileCount = make(map[Tile]int)
+	result.realTileCount = make(map[Tile]int)
 
 	allTile := DefaultAllTiles()
 	allTile = append(allTile, allTile...)
@@ -65,6 +66,7 @@ func (receiver *GameManager) AddPlayer(player IGamePlayer) error {
 
 // 刷新游戏数据, 开始新的一局游戏
 func (receiver GameManager) NewGame() {
+	fmt.Println("新游戏")
 	// 如果当前没有牌, 那么生成新的牌局
 	if receiver.tileStack == nil {
 		fmt.Println("生成牌堆")
@@ -120,6 +122,8 @@ func (receiver *GameManager) ShufflePlayer() {
 }
 
 func (receiver *GameManager) beginDraw() {
+	fmt.Println("初始牌堆:", receiver.tileStack.list)
+
 	// 先一人抓 4 张, 抓 3 轮
 	for i := 0; i < 3; i++ {
 		for _, player := range receiver.playerList {
@@ -130,6 +134,8 @@ func (receiver *GameManager) beginDraw() {
 			for _, tile := range list {
 				receiver.realTileCount[tile]--
 			}
+
+			fmt.Println("玩家", player, "得到:", list)
 		}
 	}
 
@@ -142,6 +148,14 @@ func (receiver *GameManager) beginDraw() {
 		for _, tile := range list {
 			receiver.realTileCount[tile]--
 		}
+
+		fmt.Println("玩家", player, "得到:", list)
+	}
+
+	fmt.Println("牌堆剩余:", receiver.tileStack.list)
+	for _, player := range receiver.playerList {
+		fmt.Println("玩家", player, "手牌:", player.GetAllTiles())
+		//fmt.Println("玩家", player, "打出:", player.SendTile())
 	}
 }
 
@@ -161,8 +175,11 @@ func (receiver *GameManager) startGame() {
 		playerWin := false
 		var newTile Tile
 
+		fmt.Println("轮到玩家:", player, "当前手牌:", player.GetHandTiles())
+
 		if needDraw {
 			// 抓牌
+			fmt.Println("抓到:", tile)
 			tile = receiver.tileStack.GetFromHead(1)[0]
 			receiver.realTileCount[tile]--
 		}
@@ -172,27 +189,36 @@ func (receiver *GameManager) startGame() {
 		for {
 			if nextOper == OperationPeng {
 				newTile = player.Peng(tile)
+				fmt.Println("玩家", player, "碰:", tile)
 			} else {
 				oper := player.IsNeed(tile)
 				if oper == OperationWin {
+					fmt.Println("玩家", player, "赢:", tile)
 					playerWin = true
 					break
 				} else if oper == OperationGang {
-					lastTile := receiver.tileStack.GetFromEnd(1)[0]
+					lastTile := receiver.tileStack.GetOneFromEnd()
 					tile = player.Gang(tile, lastTile)
 					newTile = tile
+					fmt.Println("玩家", player, "杠:", tile)
 				} else {
+					player.AcceptTiles(TileList{tile})
+					//fmt.Println("当前手牌:", player.GetAllTiles())
 					newTile = player.SendTile()
+					//fmt.Println("打牌后:", player.GetAllTiles())
 					break
 				}
 			}
 		}
 
+		//break
 		if playerWin {
-			fmt.Println("游戏结束")
+			fmt.Println("游戏结束, 玩家:", player, "获胜")
 			break
 		}
 
+		fmt.Println("玩家:", player, "打出:", newTile)
+		fmt.Println("玩家:", player, "手牌为:", player.GetHandTiles())
 		winPlayerCounts := make([]int, 0)
 		operPlayer := -1
 
@@ -212,12 +238,17 @@ func (receiver *GameManager) startGame() {
 		if len(winPlayerCounts) > 0 {
 			// 有玩家可以胜利, 结束
 			fmt.Println("游戏结束")
+			fmt.Print("获胜玩家:")
+			for _, count := range winPlayerCounts {
+				fmt.Print(receiver.playerList[count], ";")
+			}
 			break
 		} else if operPlayer != -1 {
 			// 有玩家选择了操作, 下个玩家直接选
 			tile = newTile
 			receiver.nextPlayerCount = operPlayer
 			needDraw = false
+			fmt.Println("玩家:", receiver.playerList[receiver.nextPlayerCount], "发生操作:", nextOper)
 		} else {
 			receiver.nextPlayerCount = (receiver.nextPlayerCount + 1) % len(receiver.playerList)
 		}
@@ -238,4 +269,20 @@ func (receiver *GameManager) DrawPlayerAllInfo() {
 
 func (receiver *GameManager) NextDealer() int {
 	return (receiver.currentDealerIndex + 1) % len(receiver.playerList)
+}
+
+func (receiver GameManager) getRestNum(tile Tile) int {
+	return receiver.tileCount[tile]
+}
+
+func (receiver GameManager) getRestNumWithoutList(tile Tile, list TileList) int {
+	count := receiver.getRestNum(tile)
+
+	for _, t := range list {
+		if t == tile {
+		}
+		count--
+	}
+
+	return count
 }

@@ -87,7 +87,7 @@ func (receiver TileList) Len() int { return len(receiver) }
 
 func (receiver TileList) Less(i, j int) bool {
 	if receiver[i].tileType != receiver[j].tileType {
-		return receiver[i].tileType < receiver[j].tileType
+		return receiver[i].tileType > receiver[j].tileType
 	}
 
 	return receiver[i].tileNum < receiver[j].tileNum

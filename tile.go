@@ -8,6 +8,10 @@ type Tile struct {
 	tileNum int
 }
 
+func NewTile(tileType TileType, num int) Tile {
+	return Tile{tileType: tileType, tileNum: num}
+}
+
 func (receiver Tile) String() string {
 	result := " "
 
