@@ -1,12 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 )
 
 //TileList 牌堆, 可代表手牌, 待抓牌, 已出牌 等各种组成排列的牌数组
 type TileList []Tile
+
+func (receiver TileList) String() string {
+	str := ""
+	for _, tile := range receiver {
+		str += fmt.Sprint(tile)
+	}
+	return fmt.Sprint(str, "[ 共 ", len(receiver), " 张 ]")
+}
 
 //Remove the n tile from list (start at 0)
 func (receiver TileList) Remove(n int) (Tile, TileList) {

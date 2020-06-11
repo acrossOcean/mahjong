@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sort"
 )
 
@@ -32,12 +33,11 @@ func (receiver PlayerOperation) String() string {
 type IGamePlayer interface {
 	// 安排位置, 给出东南西北四个牌的一个, 坐在这个位置
 	SetLocation(tile Tile)
+	GetLocation() Location
 	// 接收多张牌
 	AcceptTiles(list TileList)
 	// 查询是否需要给定的牌
 	IsNeed(tile Tile) PlayerOperation
-	// 判断是否胡牌
-	IsWin() bool
 
 	// 返回玩家当前所有牌 (包括已经杠了和碰了的牌)
 	GetAllTiles() TileList
@@ -86,6 +86,10 @@ func (receiver *CommonGamePlayer) SetLocation(tile Tile) {
 	}
 }
 
+func (receiver CommonGamePlayer) GetLocation() Location {
+	return receiver.Location
+}
+
 func (receiver *CommonGamePlayer) AcceptTiles(list TileList) {
 	receiver.HandTiles = append(receiver.HandTiles, list...)
 	sort.Sort(receiver.HandTiles)
@@ -99,6 +103,21 @@ func (receiver CommonGamePlayer) IsNeed(tile Tile) PlayerOperation {
 	return OperationNull
 }
 
+func (receiver CommonGamePlayer) GetAllTiles() TileList {
+	list := receiver.HandTiles
+
+	for _, tiles := range receiver.FinishedTiles {
+		list = append(list, tiles...)
+	}
+
+	return list
+}
+
+func (receiver CommonGamePlayer) GetHandTiles() TileList {
+	return receiver.HandTiles
+}
+
+// 获取胡牌所需牌
 func (receiver CommonGamePlayer) getWinNeededTiles(list TileList) TileList {
 	sort.Sort(list)
 	var neededTiles TileList
@@ -147,6 +166,7 @@ func (receiver CommonGamePlayer) getWinNeededTiles(list TileList) TileList {
 	return neededTiles
 }
 
+// 获取碰牌所需牌
 func (receiver CommonGamePlayer) getPengNeededTiles(list TileList) TileList {
 	sort.Sort(list)
 
@@ -170,6 +190,7 @@ func (receiver CommonGamePlayer) getPengNeededTiles(list TileList) TileList {
 	return result
 }
 
+// 获取杠牌所需牌
 func (receiver CommonGamePlayer) getGangNeededTiles(list TileList) TileList {
 	sort.Sort(list)
 
@@ -193,6 +214,7 @@ func (receiver CommonGamePlayer) getGangNeededTiles(list TileList) TileList {
 	return result
 }
 
+// 检查是否胡牌
 func (receiver CommonGamePlayer) checkWin(list TileList) bool {
 	sort.Sort(list)
 	old := list
@@ -201,9 +223,10 @@ func (receiver CommonGamePlayer) checkWin(list TileList) bool {
 	// 剩下的组成 三个三个的组合即可
 	for i := 0; i < list.Len()-1; i++ {
 		if list[i] == list[i+1] {
+			fmt.Println(i, " :发现对:", list[i])
 			// 发现一个对, 除去这个对, 并检查剩下的是否满足 3个一组
 			_, newList := list.Remove(i)
-			_, newList = list.Remove(i)
+			_, newList = newList.Remove(i)
 
 			if receiver.checkIsAllThree(newList) {
 				return true
@@ -220,7 +243,9 @@ func (receiver CommonGamePlayer) checkWin(list TileList) bool {
 func (receiver CommonGamePlayer) checkIsAllThree(list TileList) bool {
 	sort.Sort(list)
 
+	//fmt.Println("检查序列:", list)
 	typeSplitList := receiver.splitTileList(list)
+	//fmt.Println("分类后得到序列:", typeSplitList)
 	for _, splitList := range typeSplitList {
 		if len(splitList)%3 != 0 {
 			return false
@@ -228,8 +253,9 @@ func (receiver CommonGamePlayer) checkIsAllThree(list TileList) bool {
 
 		for {
 			newList, ok := receiver.removeSameOnce(splitList, 3)
+			splitList = newList
 			if !ok {
-				splitList = newList
+				//fmt.Println("移除3张一样的后:", splitList)
 				break
 			}
 		}
@@ -237,11 +263,14 @@ func (receiver CommonGamePlayer) checkIsAllThree(list TileList) bool {
 		// 剩下的牌 应该都是可以 直接+1 +1 连上的
 		for {
 			newList, ok := receiver.removeLineOnce(splitList)
+			splitList = newList
 			if !ok {
-				splitList = newList
+				//fmt.Println("移除一连后:", splitList)
+				break
 			}
 		}
 
+		//fmt.Println("全部移除完毕后:", splitList)
 		// 没有移除完, 说明有不符的, 所以失败
 		if len(splitList) != 0 {
 			return false
@@ -251,18 +280,19 @@ func (receiver CommonGamePlayer) checkIsAllThree(list TileList) bool {
 	return true
 }
 
+// 移除 重复 n 次 的牌 一回
 func (receiver CommonGamePlayer) removeSameOnce(list TileList, count int) (TileList, bool) {
-	if count < 1 {
+	if count < 1 || len(list) < count {
 		return list, false
 	}
 
 	sort.Sort(list)
 	isRemove := false
-	for i := 0; i < len(list)-count; i++ {
-		tempList := TileList{list[i]}
+	for i := 0; i <= len(list)-count; i++ {
+		tile := list[i]
 		isSame := true
 		for j := 1; j < count; j++ {
-			if list[i+j] != tempList[0] {
+			if list[i+j] != tile {
 				isSame = false
 				i += j - 1
 				break
@@ -271,7 +301,7 @@ func (receiver CommonGamePlayer) removeSameOnce(list TileList, count int) (TileL
 
 		if isSame {
 			// 可以移除这些,然后返回了
-			for i := 0; i < count; i++ {
+			for j := 0; j < count; j++ {
 				_, list = list.Remove(i)
 			}
 
@@ -283,22 +313,22 @@ func (receiver CommonGamePlayer) removeSameOnce(list TileList, count int) (TileL
 	return list, isRemove
 }
 
+// 移除 指定的 重复 n 次的牌 一回
 func (receiver CommonGamePlayer) removeSpecSameOnce(list TileList, tile Tile, count int) (TileList, bool) {
-	if count < 1 {
+	if count < 1 || len(list) < count {
 		return list, false
 	}
 
 	sort.Sort(list)
 	isRemove := false
-	for i := 0; i < len(list)-count; i++ {
+	for i := 0; i <= len(list)-count; i++ {
 		if list[i] != tile {
 			continue
 		}
 
-		tempList := TileList{list[i]}
 		isSame := true
 		for j := 1; j < count; j++ {
-			if list[i+j] != tempList[0] {
+			if list[i+j] != tile {
 				isSame = false
 				i += j - 1
 				break
@@ -307,7 +337,7 @@ func (receiver CommonGamePlayer) removeSpecSameOnce(list TileList, tile Tile, co
 
 		if isSame {
 			// 可以移除这些,然后返回了
-			for i := 0; i < count; i++ {
+			for j := 0; j < count; j++ {
 				_, list = list.Remove(i)
 			}
 
@@ -335,12 +365,16 @@ func (receiver CommonGamePlayer) removeLineOnce(list TileList) (TileList, bool) 
 		for j = i + 1; j < len(list)-1; j++ {
 			if list[j] != first {
 				second = list[j]
-			}
-			for k = j + 1; k < len(list); k++ {
-				if list[k] != first && list[k] != second {
-					third = list[k]
-					findAll = true
+				for k = j + 1; k < len(list); k++ {
+					if list[k] != first && list[k] != second {
+						third = list[k]
+						findAll = true
+						break
+					}
 				}
+			}
+			if findAll {
+				break
 			}
 		}
 
@@ -357,24 +391,6 @@ func (receiver CommonGamePlayer) removeLineOnce(list TileList) (TileList, bool) 
 	}
 
 	return list, isRemove
-}
-
-func (receiver CommonGamePlayer) IsWin() bool {
-	return false
-}
-
-func (receiver CommonGamePlayer) GetAllTiles() TileList {
-	list := receiver.HandTiles
-
-	for _, tiles := range receiver.FinishedTiles {
-		list = append(list, tiles...)
-	}
-
-	return list
-}
-
-func (receiver CommonGamePlayer) GetHandTiles() TileList {
-	return receiver.HandTiles
 }
 
 // 按照所给的list,把不同 tileType的 tile 放到不同的list中
@@ -435,7 +451,13 @@ func (receiver CommonGamePlayer) getMostUselessTile(list TileList) (Tile, TileLi
 	return list.Remove(0)
 }
 
+// 检查是否存在一连
 func (receiver CommonGamePlayer) checkHasLineInList(tile Tile, list TileList) bool {
+	if tile.tileType != TileTypeBamboo && tile.tileType != TileTypeCharacter && tile.tileType != TileTypeDot {
+		// 除了  条/万/饼 没有能凑成连的
+		return false
+	}
+
 	// 有没有三个连起来的, 有就跳过
 	var b2, b1, a1, a2 bool
 	if tile.tileNum > 2 {
@@ -458,6 +480,7 @@ func (receiver CommonGamePlayer) checkHasLineInList(tile Tile, list TileList) bo
 	return false
 }
 
+// 寻找指定的牌在列表中的位置
 func (receiver CommonGamePlayer) findTileInList(tile Tile, list TileList, startAt int) (bool, int) {
 	if startAt < 0 {
 		startAt = 0

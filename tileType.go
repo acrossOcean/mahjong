@@ -4,8 +4,9 @@ package main
 type TileType int
 
 const (
+	_ TileType = iota
 	//TileTypeDot 饼 1-9
-	TileTypeDot TileType = iota
+	TileTypeDot
 
 	//TileTypeBamboo 条 1-9
 	TileTypeBamboo

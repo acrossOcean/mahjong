@@ -22,7 +22,7 @@ func (receiver GamePlayerAI) String() string {
 	return fmt.Sprint("AI(", receiver.Location, "): ")
 }
 
-func (receiver GamePlayerAI) Peng(tile Tile) Tile {
+func (receiver *GamePlayerAI) Peng(tile Tile) Tile {
 	// 寻找相同的牌, 然后移出手牌, 组成list放入固定牌部分
 	var list TileList
 	var after TileList
@@ -50,7 +50,7 @@ func (receiver GamePlayerAI) Peng(tile Tile) Tile {
 	return tile
 }
 
-func (receiver GamePlayerAI) Gang(tile Tile, newTile Tile) Tile {
+func (receiver *GamePlayerAI) Gang(tile Tile, newTile Tile) Tile {
 	// 寻找相同的牌, 然后移出手牌, 组成list放入固定牌部分
 	var list TileList
 	for i, handTile := range receiver.HandTiles {
@@ -82,7 +82,7 @@ func (receiver GamePlayerAI) Win(Tile) {
 
 }
 
-func (receiver GamePlayerAI) SendTile() Tile {
+func (receiver *GamePlayerAI) SendTile() Tile {
 	maxNeedCount := -1
 	var uselessTile Tile
 	//old := receiver.HandTiles
@@ -109,9 +109,12 @@ func (receiver GamePlayerAI) SendTile() Tile {
 	if maxNeedCount < 1 {
 		// 如果找不到一个合适的可以扔的牌, 那么扔一张影响最小的
 		uselessTile, receiver.HandTiles = receiver.getMostUselessTile(receiver.HandTiles)
+	} else {
+		receiver.HandTiles, _ = receiver.removeSpecSameOnce(receiver.HandTiles, uselessTile, 1)
 	}
 
 	// 更新当前需要的牌
+	receiver.NeededTiles = map[Tile]PlayerOperation{}
 	list := receiver.getWinNeededTiles(receiver.HandTiles)
 	for _, tile := range list {
 		receiver.NeededTiles[tile] = OperationWin

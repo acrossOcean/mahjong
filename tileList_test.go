@@ -15,9 +15,9 @@ func TestTileList_Sort(t *testing.T) {
 		Tile{tileType: TileTypeCharacter, tileNum: 2},
 	}
 	result := TileList{
-		Tile{tileType: TileTypeBamboo, tileNum: 1},
 		Tile{tileType: TileTypeCharacter, tileNum: 2},
 		Tile{tileType: TileTypeCharacter, tileNum: 3},
+		Tile{tileType: TileTypeBamboo, tileNum: 1},
 	}
 
 	fmt.Println("before:", tiles)
