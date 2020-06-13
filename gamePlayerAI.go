@@ -95,9 +95,13 @@ func (receiver *GamePlayerAI) SendTile() Tile {
 		//fmt.Println("old:", old)
 		//fmt.Println("-----------")
 
-		neededList := receiver.getWinNeededTiles(list)
-		if len(neededList) > maxNeedCount {
-			maxNeedCount = len(neededList)
+		neededMap := receiver.getWinNeededTiles(list)
+		sum := 0
+		for _, count := range neededMap {
+			sum += count
+		}
+		if sum > maxNeedCount {
+			maxNeedCount = sum
 			uselessTile = tile
 		}
 
@@ -115,12 +119,12 @@ func (receiver *GamePlayerAI) SendTile() Tile {
 
 	// 更新当前需要的牌
 	receiver.NeededTiles = map[Tile]PlayerOperation{}
-	list := receiver.getWinNeededTiles(receiver.HandTiles)
-	for _, tile := range list {
+	neededMap := receiver.getWinNeededTiles(receiver.HandTiles)
+	for tile := range neededMap {
 		receiver.NeededTiles[tile] = OperationWin
 	}
 
-	list = receiver.getGangNeededTiles(receiver.HandTiles)
+	list := receiver.getGangNeededTiles(receiver.HandTiles)
 	for _, tile := range list {
 		if _, ok := receiver.NeededTiles[tile]; !ok {
 			receiver.NeededTiles[tile] = OperationGang

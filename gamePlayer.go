@@ -118,23 +118,28 @@ func (receiver CommonGamePlayer) GetHandTiles() TileList {
 }
 
 // 获取胡牌所需牌
-func (receiver CommonGamePlayer) getWinNeededTiles(list TileList) TileList {
+func (receiver CommonGamePlayer) getWinNeededTiles(list TileList) map[Tile]int {
 	sort.Sort(list)
-	var neededTiles TileList
+	//var neededTiles TileList
+	neededMap := make(map[Tile]int, 0)
 
 	// 判断需要的牌, 即 有这张牌之后可以赢的牌
 	for _, tile := range list {
+		fmt.Println("getWinNeededTiles 检查:", tile)
+		// 饼条万 还可以 前补一张,后补一张
 		if tile.tileType == TileTypeDot || tile.tileType == TileTypeBamboo || tile.tileType == TileTypeCharacter {
-			// 饼条万 还可以 前补一张,后补一张
 			if tile.tileNum > 1 {
 				beforeTile := Tile{
 					tileType: tile.tileType,
 					tileNum:  tile.tileNum - 1,
 				}
-				if receiver.Helper.getRestNumWithoutList(beforeTile, receiver.GetAllTiles()) >= 1 {
+				fmt.Println("getWinNeededTiles 检查前补一张:", beforeTile, "加入前队列:", list)
+				if count := receiver.Helper.getRestNumWithoutList(beforeTile, receiver.GetAllTiles()); count >= 1 {
 					testList := append(list, beforeTile)
+					fmt.Println("getWinNeededTiles 够用, 检查是否获胜:", testList)
 					if receiver.checkWin(testList) {
-						neededTiles = append(neededTiles, beforeTile)
+						fmt.Println("getWinNeededTiles 返回true final 1, 需要:", beforeTile)
+						neededMap[beforeTile] = count
 					}
 				}
 			}
@@ -142,28 +147,35 @@ func (receiver CommonGamePlayer) getWinNeededTiles(list TileList) TileList {
 			if tile.tileNum < 9 {
 				afterTile := Tile{
 					tileType: tile.tileType,
-					tileNum:  tile.tileNum,
+					tileNum:  tile.tileNum + 1,
 				}
 
-				if receiver.Helper.getRestNumWithoutList(afterTile, receiver.GetAllTiles()) >= 1 {
+				fmt.Println("getWinNeededTiles 检查后补一张:", afterTile, "加入前队列:", list)
+				if count := receiver.Helper.getRestNumWithoutList(afterTile, receiver.GetAllTiles()); count >= 1 {
 					testList := append(list, afterTile)
+					fmt.Println("getWinNeededTiles 够用, 检查是否获胜:", testList)
 					if receiver.checkWin(testList) {
-						neededTiles = append(neededTiles, afterTile)
+						fmt.Println("getWinNeededTiles 返回true final 2, 需要:", afterTile)
+						neededMap[afterTile] = count
 					}
 				}
 			}
+		}
 
-			sameTile := tile
-			if receiver.Helper.getRestNumWithoutList(sameTile, receiver.GetAllTiles()) >= 1 {
-				testList := append(list, sameTile)
-				if receiver.checkWin(testList) {
-					neededTiles = append(neededTiles, sameTile)
-				}
+		// 直接补上一张一样的, 看能不能行
+		sameTile := tile
+		fmt.Println("getWinNeededTiles 检查补相同一张:", sameTile, "加入前队列:", list)
+		if count := receiver.Helper.getRestNumWithoutList(sameTile, receiver.GetAllTiles()); count >= 1 {
+			testList := append(list, sameTile)
+			fmt.Println("getWinNeededTiles 够用, 检查是否获胜:", testList)
+			if receiver.checkWin(testList) {
+				fmt.Println("getWinNeededTiles 返回true final 3, 需要 :", sameTile)
+				neededMap[sameTile] = count
 			}
 		}
 	}
 
-	return neededTiles
+	return neededMap
 }
 
 // 获取碰牌所需牌
@@ -217,25 +229,32 @@ func (receiver CommonGamePlayer) getGangNeededTiles(list TileList) TileList {
 // 检查是否胡牌
 func (receiver CommonGamePlayer) checkWin(list TileList) bool {
 	sort.Sort(list)
-	old := list
+	//old := list
 
+	fmt.Println("checkWin 检查:", list)
 	// 要有一个对
 	// 剩下的组成 三个三个的组合即可
 	for i := 0; i < list.Len()-1; i++ {
 		if list[i] == list[i+1] {
-			fmt.Println(i, " :发现对:", list[i])
 			// 发现一个对, 除去这个对, 并检查剩下的是否满足 3个一组
-			_, newList := list.Remove(i)
-			_, newList = newList.Remove(i)
+			fmt.Println("checkWin 发现一个对:", list[i])
+			remove1, newList := list.Remove(i)
+			remove2, newList := newList.Remove(i)
 
+			fmt.Println("checkWin 检查是否三个一组:", newList)
 			if receiver.checkIsAllThree(newList) {
+				fmt.Println("checkWin 返回true 2")
 				return true
 			}
 
-			list = old
+			list = append(newList, remove1)
+			list = append(list, remove2)
+			sort.Sort(list)
+			fmt.Println("不太行, 恢复list:", list)
 		}
 	}
 
+	fmt.Println("checkWin 返回 false 2")
 	return false
 }
 
@@ -243,9 +262,9 @@ func (receiver CommonGamePlayer) checkWin(list TileList) bool {
 func (receiver CommonGamePlayer) checkIsAllThree(list TileList) bool {
 	sort.Sort(list)
 
-	//fmt.Println("检查序列:", list)
+	fmt.Println("checkIsAllThree 检查序列:", list)
 	typeSplitList := receiver.splitTileList(list)
-	//fmt.Println("分类后得到序列:", typeSplitList)
+	fmt.Println("checkIsAllThree 分类后得到序列:", typeSplitList)
 	for _, splitList := range typeSplitList {
 		if len(splitList)%3 != 0 {
 			return false
@@ -255,7 +274,7 @@ func (receiver CommonGamePlayer) checkIsAllThree(list TileList) bool {
 			newList, ok := receiver.removeSameOnce(splitList, 3)
 			splitList = newList
 			if !ok {
-				//fmt.Println("移除3张一样的后:", splitList)
+				fmt.Println("checkIsAllThree 移除3张一样的后:", splitList)
 				break
 			}
 		}
@@ -265,18 +284,20 @@ func (receiver CommonGamePlayer) checkIsAllThree(list TileList) bool {
 			newList, ok := receiver.removeLineOnce(splitList)
 			splitList = newList
 			if !ok {
-				//fmt.Println("移除一连后:", splitList)
+				fmt.Println("checkIsAllThree 移除一连后:", splitList)
 				break
 			}
 		}
 
-		//fmt.Println("全部移除完毕后:", splitList)
+		fmt.Println("checkIsAllThree 全部移除完毕后:", splitList)
 		// 没有移除完, 说明有不符的, 所以失败
 		if len(splitList) != 0 {
+			fmt.Println("checkIsAllThree 返回 false")
 			return false
 		}
 	}
 
+	fmt.Println("checkIsAllThree 返回 true")
 	return true
 }
 
@@ -428,19 +449,28 @@ func (receiver CommonGamePlayer) getMostUselessTile(list TileList) (Tile, TileLi
 	sort.Sort(list)
 
 	for i, tile := range list {
-		if tile.tileType != TileTypeDot && tile.tileType != TileTypeBamboo || tile.tileType != TileTypeCharacter {
+		fmt.Println("查:", tile)
+		if tile.tileType != TileTypeDot && tile.tileType != TileTypeBamboo && tile.tileType != TileTypeCharacter {
 			// 不是饼条万, 如果没有对, 就是这个最垃圾, 返回就行
-			if _, ok := receiver.removeSpecSameOnce(list, tile, 2); !ok {
+			if _, ok := receiver.removeSpecSameOnce(list.copy(), tile, 2); !ok {
 				return list.Remove(i)
 			}
 		} else {
 			// 有对, 跳过
-			if _, ok := receiver.removeSpecSameOnce(list, tile, 2); !ok {
+			if _, ok := receiver.removeSpecSameOnce(list.copy(), tile, 2); !ok {
+				fmt.Println("有对")
+				continue
+			}
+
+			// 有三个的, 跳过
+			if _, ok := receiver.removeSpecSameOnce(list.copy(), tile, 3); !ok {
+				fmt.Println("有三")
 				continue
 			}
 
 			// 有没有三个连起来的, 有就跳过
-			if receiver.checkHasLineInList(tile, list) {
+			if receiver.checkHasLineInList(tile, list.copy()) {
+				fmt.Println("有连")
 				continue
 			} else {
 				return list.Remove(i)
@@ -458,6 +488,7 @@ func (receiver CommonGamePlayer) checkHasLineInList(tile Tile, list TileList) bo
 		return false
 	}
 
+	fmt.Println("检查有没有连一起的:", tile, " 在列表:", list, "中")
 	// 有没有三个连起来的, 有就跳过
 	var b2, b1, a1, a2 bool
 	if tile.tileNum > 2 {
@@ -474,9 +505,12 @@ func (receiver CommonGamePlayer) checkHasLineInList(tile Tile, list TileList) bo
 	}
 
 	if (b1 && b2) || (a1 && a2) || (b1 && a1) {
+		fmt.Println("有")
 		//有三个连一起, 可以跳过
 		return true
 	}
+
+	fmt.Println("没有")
 	return false
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 
@@ -19,10 +18,22 @@ func newAIPlayer() *GamePlayerAI {
 
 func TestCommonGamePlayer_SetLocation(t *testing.T) {
 	ai := newAIPlayer()
-	tile := NewTile(TileTypeWind, 1)
 
+	tile := NewTile(TileTypeWind, 1)
 	ai.SetLocation(tile)
 	assert.Equal(t, ai.GetLocation(), LocationEast)
+
+	tile = NewTile(TileTypeWind, 2)
+	ai.SetLocation(tile)
+	assert.Equal(t, ai.GetLocation(), LocationSouth)
+
+	tile = NewTile(TileTypeWind, 3)
+	ai.SetLocation(tile)
+	assert.Equal(t, ai.GetLocation(), LocationWest)
+
+	tile = NewTile(TileTypeWind, 4)
+	ai.SetLocation(tile)
+	assert.Equal(t, ai.GetLocation(), LocationNorth)
 }
 
 func TestCommonGamePlayer_AcceptTiles(t *testing.T) {
@@ -78,7 +89,91 @@ func TestCommonGamePlayer_GetAllTiles(t *testing.T) {
 
 // ======================私有方法======================
 func TestCommonGamePlayer_getWinNeededTiles(t *testing.T) {
-	// todo
+	var gm *GameManager
+	var ai *GamePlayerAI
+	// 需要对
+	list1 := TileList{
+		NewTile(TileTypeWind, 1),
+	}
+
+	list1Need := TileList{
+		NewTile(TileTypeWind, 1),
+	}
+
+	gm = NewGameManagerWithStack(*NewGameTileStack(list1Need))
+	ai = NewAI(gm)
+
+	afterMap1 := ai.getWinNeededTiles(list1)
+	afterList1 := tileMapToList(afterMap1)
+	sort.Sort(afterList1)
+	sort.Sort(list1Need)
+	assert.Equal(t, afterList1, list1Need)
+
+	// 需要一连
+	list2 := TileList{
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeCharacter, 2),
+		NewTile(TileTypeCharacter, 3),
+	}
+
+	list2Need := TileList{
+		NewTile(TileTypeCharacter, 1),
+		NewTile(TileTypeCharacter, 4),
+	}
+
+	gm = NewGameManagerWithStack(*NewGameTileStack(list2Need))
+	ai = NewAI(gm)
+
+	afterMap2 := ai.getWinNeededTiles(list2)
+	afterList2 := tileMapToList(afterMap2)
+	sort.Sort(afterList2)
+	sort.Sort(list2Need)
+	assert.Equal(t, afterList2, list2Need)
+
+	// 需要三个的
+	list3 := TileList{
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeBamboo, 1),
+		NewTile(TileTypeBamboo, 1),
+	}
+
+	list3Need := TileList{
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeBamboo, 1),
+	}
+
+	gm = NewGameManagerWithStack(*NewGameTileStack(list3Need))
+	ai = NewAI(gm)
+
+	afterMap3 := ai.getWinNeededTiles(list3)
+	afterList3 := tileMapToList(afterMap3)
+	sort.Sort(afterList3)
+	sort.Sort(list3Need)
+	assert.Equal(t, afterList3, list3Need)
+
+	// 复杂型胡牌
+	list4 := TileList{
+		NewTile(TileTypeBamboo, 2),
+		NewTile(TileTypeBamboo, 3),
+		NewTile(TileTypeBamboo, 4),
+		NewTile(TileTypeBamboo, 5),
+	}
+
+	list4Need := TileList{
+		NewTile(TileTypeBamboo, 2),
+		NewTile(TileTypeBamboo, 5),
+	}
+
+	gm = NewGameManagerWithStack(*NewGameTileStack(list4Need))
+	ai = NewAI(gm)
+
+	afterMap4 := ai.getWinNeededTiles(list4)
+	afterList4 := tileMapToList(afterMap4)
+	sort.Sort(afterList4)
+	sort.Sort(list4Need)
+	assert.Equal(t, afterList4, list4Need)
 }
 
 func TestCommonGamePlayer_getPengNeededTiles(t *testing.T) {
@@ -303,23 +398,23 @@ func TestCommonGamePlayer_removeLineOnce(t *testing.T) {
 	all = all.Shuffle()
 	after, ok = ai.removeLineOnce(all)
 	after, ok = ai.removeLineOnce(after)
-	assert.Equal(t, ok, false)
-	assert.Equal(t, after, all)
+	assert.Equal(t, ok, true)
+	assert.Equal(t, after, list)
 
 	after, ok = ai.removeLineOnce(list)
 	assert.Equal(t, ok, false)
 
-	all = append(list, notLine1...)
-	all = all.Shuffle()
-	after, ok = ai.removeLineOnce(all)
+	all2 := append(list, notLine1...)
+	all2 = all2.Shuffle()
+	after, ok = ai.removeLineOnce(all2)
 	assert.Equal(t, ok, false)
-	assert.Equal(t, after, all)
+	assert.Equal(t, after, all2)
 
-	all = append(list, notLine2...)
-	all = all.Shuffle()
-	after, ok = ai.removeLineOnce(all)
+	all3 := append(list, notLine2...)
+	all3 = all3.Shuffle()
+	after, ok = ai.removeLineOnce(all3)
 	assert.Equal(t, ok, false)
-	assert.Equal(t, after, all)
+	assert.Equal(t, after, all3)
 
 	after, ok = ai.removeLineOnce(notLine3)
 	assert.Equal(t, ok, false)
@@ -448,10 +543,6 @@ func TestCommonGamePlayer_removeSpecSameOnce(t *testing.T) {
 	assert.Equal(t, after, list)
 }
 
-func TestCommonGamePlayer_removeSpecSameOnce(t *testing.T) {
-
-}
-
 func TestCommonGamePlayer_checkWin(t *testing.T) {
 	ai := newAIPlayer()
 	notWinList1 := TileList{
@@ -504,21 +595,13 @@ func TestCommonGamePlayer_checkWin(t *testing.T) {
 		NewTile(TileTypeBamboo, 4),
 	}
 
-	fmt.Println("检查1")
 	assert.Equal(t, false, ai.checkWin(notWinList1))
-	fmt.Println("检查2")
 	assert.Equal(t, false, ai.checkWin(notWinList2))
-	fmt.Println("检查3")
 	assert.Equal(t, false, ai.checkWin(notWinList3))
-	fmt.Println("检查4")
 	assert.Equal(t, true, ai.checkWin(winList1))
-	fmt.Println("检查5")
 	assert.Equal(t, true, ai.checkWin(winList2))
-	fmt.Println("检查6")
 	assert.Equal(t, true, ai.checkWin(winList3))
-	fmt.Println("检查7")
 	assert.Equal(t, true, ai.checkWin(winList4))
-	fmt.Println("检查完")
 }
 
 func TestCommonGamePlayer_checkIsAllThree(t *testing.T) {
@@ -627,5 +710,60 @@ func TestCommonGamePlayer_checkIsAllThree(t *testing.T) {
 }
 
 func TestCommonGamePlayer_getMostUselessTile(t *testing.T) {
+	ai := newAIPlayer()
 
+	//list1 := TileList{
+	//	NewTile(TileTypeWind, 1),
+	//	NewTile(TileTypeBamboo, 1),
+	//}
+	//
+	//list2 := TileList{
+	//	NewTile(TileTypeWind, 1),
+	//	NewTile(TileTypeWind, 1),
+	//	NewTile(TileTypeBamboo, 1),
+	//}
+	//
+	//list3 := TileList{
+	//	NewTile(TileTypeWind, 1),
+	//	NewTile(TileTypeWind, 1),
+	//	NewTile(TileTypeBamboo, 2),
+	//	NewTile(TileTypeBamboo, 3),
+	//}
+
+	list4 := TileList{
+		NewTile(TileTypeBamboo, 1),
+		NewTile(TileTypeBamboo, 2),
+		NewTile(TileTypeBamboo, 3),
+		NewTile(TileTypeBamboo, 5),
+	}
+
+	//list5 := TileList{
+	//	NewTile(TileTypeBamboo, 1),
+	//	NewTile(TileTypeBamboo, 2),
+	//	NewTile(TileTypeBamboo, 3),
+	//	NewTile(TileTypeCharacter, 1),
+	//}
+
+	//tile1, _ := ai.getMostUselessTile(list1)
+	//assert.Equal(t, tile1, NewTile(TileTypeWind, 1))
+	//
+	//tile2, _ := ai.getMostUselessTile(list2)
+	//assert.Equal(t, tile2, NewTile(TileTypeBamboo, 1))
+	//
+	//tile3, _ := ai.getMostUselessTile(list3)
+	//assert.Equal(t, tile3, NewTile(TileTypeBamboo, 2))
+
+	tile4, _ := ai.getMostUselessTile(list4)
+	assert.Equal(t, tile4, NewTile(TileTypeBamboo, 5))
+
+	//tile5, _ := ai.getMostUselessTile(list5)
+	//assert.Equal(t, tile5, NewTile(TileTypeCharacter, 1))
+}
+
+func tileMapToList(m map[Tile]int) TileList {
+	var result TileList
+	for tile := range m {
+		result = append(result, tile)
+	}
+	return result
 }

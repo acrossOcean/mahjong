@@ -9,6 +9,15 @@ import (
 //TileList 牌堆, 可代表手牌, 待抓牌, 已出牌 等各种组成排列的牌数组
 type TileList []Tile
 
+func (receiver TileList) copy() TileList {
+	var list TileList
+	for _, tile := range receiver {
+		list = append(list, tile)
+	}
+
+	return list
+}
+
 func (receiver TileList) String() string {
 	str := ""
 	for _, tile := range receiver {
@@ -26,7 +35,8 @@ func (receiver TileList) Remove(n int) (Tile, TileList) {
 	}
 
 	result := receiver[n]
-	r := receiver[:n]
+	r := receiver.copy()
+	r = receiver[:n]
 	if n+1 < len(receiver) {
 		r = append(r, receiver[n+1:]...)
 	}
@@ -38,7 +48,7 @@ func (receiver TileList) Shuffle() TileList {
 	result := make([]Tile, receiver.Len())
 	rand.Seed(time.Now().UnixNano())
 
-	list := receiver
+	list := receiver.copy()
 	for i := 0; i < len(result); i++ {
 		result[i], list = list.Remove(rand.Intn(list.Len()))
 	}

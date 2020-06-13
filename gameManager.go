@@ -43,12 +43,16 @@ func NewGameManager() *GameManager {
 
 func NewGameManagerWithStack(stack GameTileStack) *GameManager {
 	result := new(GameManager)
+	result.currentDealerIndex = -1
+	result.tileCount = make(map[Tile]int)
+	result.realTileCount = make(map[Tile]int)
 
 	result.lastTileStack = stack
 	result.tileStack = NewGameTileStack(stack.GetTileList().Shuffle())
 
 	for _, tile := range result.tileStack.GetTileList() {
 		result.tileCount[tile]++
+		result.realTileCount[tile]++
 	}
 
 	return result
@@ -291,8 +295,8 @@ func (receiver GameManager) getRestNumWithoutList(tile Tile, list TileList) int 
 
 	for _, t := range list {
 		if t == tile {
+			count--
 		}
-		count--
 	}
 
 	return count
