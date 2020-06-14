@@ -167,7 +167,7 @@ func (receiver *GameManager) startGame() {
 	needDraw := true
 	var tile Tile
 	var nextOper PlayerOperation
-	hasOper := false
+	//hasOper := false
 
 	for {
 		if receiver.tileStack.GetTileList().Len() <= 0 {
@@ -180,6 +180,7 @@ func (receiver *GameManager) startGame() {
 		playerWin := false
 		var newTile Tile
 
+		fmt.Println("-------------------------")
 		fmt.Println("轮到玩家:", player, "当前手牌:", player.GetHandTiles())
 
 		if needDraw {
@@ -196,23 +197,24 @@ func (receiver *GameManager) startGame() {
 				newTile = player.Peng(tile)
 				fmt.Println("玩家", player, "碰:", tile)
 				nextOper = OperationNull
-				hasOper = true
+				//hasOper = true
+				break
 			} else {
 				oper := player.IsNeed(tile)
 				if oper == OperationWin {
 					fmt.Println("玩家", player, "赢:", tile)
 					playerWin = true
-					hasOper = true
+					//hasOper = true
 					break
 				} else if oper == OperationGang {
 					lastTile := receiver.tileStack.GetOneFromEnd()
 					tile = player.Gang(tile, lastTile)
 					newTile = tile
-					hasOper = true
+					//hasOper = true
 					fmt.Println("玩家", player, "杠:", tile)
 				} else {
 					player.AcceptTiles(TileList{tile})
-					fmt.Println("当前手牌:", player.GetAllTiles())
+					fmt.Println("当前手牌:", player.GetHandTiles())
 					newTile = player.SendTile()
 					break
 				}
@@ -220,7 +222,7 @@ func (receiver *GameManager) startGame() {
 		}
 
 		fmt.Println("玩家:", player, "打出:", newTile)
-		fmt.Println("打牌后:", player.GetAllTiles())
+		fmt.Println("打牌后: 手牌:", player.GetHandTiles())
 
 		//break
 		if playerWin {
@@ -230,9 +232,9 @@ func (receiver *GameManager) startGame() {
 
 		fmt.Println("玩家:", player, "手牌为:", player.GetHandTiles())
 
-		if hasOper {
-			break
-		}
+		//if hasOper {
+		//	break
+		//}
 
 		winPlayerCounts := make([]int, 0)
 		operPlayer := -1

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"sort"
 )
 
 type GamePlayerAI struct {
@@ -25,14 +24,18 @@ func (receiver GamePlayerAI) String() string {
 func (receiver *GamePlayerAI) Peng(tile Tile) Tile {
 	// 寻找相同的牌, 然后移出手牌, 组成list放入固定牌部分
 	var list TileList
-	var after TileList
-	for i, handTile := range receiver.HandTiles {
+	if len(receiver.HandTiles) < 1 {
+		return tile
+	}
+	for i := len(receiver.HandTiles) - 1; i >= 0; i-- {
+		handTile := receiver.HandTiles[i]
 		if len(list) == 2 {
 			break
 		}
+
 		if tile.tileType == handTile.tileType && tile.tileNum == handTile.tileNum {
 			var temp Tile
-			temp, after = receiver.HandTiles.Remove(i)
+			temp, receiver.HandTiles = receiver.HandTiles.Remove(i)
 			list = append(list, temp)
 		}
 	}
@@ -41,7 +44,6 @@ func (receiver *GamePlayerAI) Peng(tile Tile) Tile {
 	if len(list) == 2 {
 		list = append(list, tile)
 		receiver.FinishedTiles = append(receiver.FinishedTiles, TileList(list))
-		receiver.HandTiles = after
 		return receiver.SendTile()
 	}
 
@@ -53,14 +55,19 @@ func (receiver *GamePlayerAI) Peng(tile Tile) Tile {
 func (receiver *GamePlayerAI) Gang(tile Tile, newTile Tile) Tile {
 	// 寻找相同的牌, 然后移出手牌, 组成list放入固定牌部分
 	var list TileList
-	for i, handTile := range receiver.HandTiles {
+	if len(receiver.HandTiles) < 1 {
+		return tile
+	}
+
+	for i := len(receiver.HandTiles) - 1; i >= 0; i-- {
+		handTile := receiver.HandTiles[i]
 		if len(list) == 3 {
 			break
 		}
 		if tile.tileType == handTile.tileType && tile.tileNum == handTile.tileNum {
-			temp, l := receiver.HandTiles.Remove(i)
+			var temp Tile
+			temp, receiver.HandTiles = receiver.HandTiles.Remove(i)
 			list = append(list, temp)
-			receiver.HandTiles = l
 		}
 	}
 
@@ -85,17 +92,16 @@ func (receiver GamePlayerAI) Win(Tile) {
 func (receiver *GamePlayerAI) SendTile() Tile {
 	maxNeedCount := -1
 	var uselessTile Tile
-	//old := receiver.HandTiles
 
 	// 轮询手中的牌, 每张牌扔一次, 然后进行 加一张牌胡 的判断, 看扔哪张牌胡的几率大, 如果相同, 那么先扔离的远的, 比如 不成对的风/单张的等
 	for i := range receiver.HandTiles {
-		//fmt.Println("手牌:", receiver.HandTiles)
-		tile, list := receiver.HandTiles.Remove(i)
-		//fmt.Println("移出:", tile, "剩余:", list)
-		//fmt.Println("old:", old)
 		//fmt.Println("-----------")
+		//fmt.Println("手牌:", receiver.HandTiles)
+		tile, list := receiver.HandTiles.copy().Remove(i)
+		//fmt.Println("移出:", tile, "剩余:", list)
 
 		neededMap := receiver.getWinNeededTiles(list)
+		//fmt.Println("移除:", tile, " 后, 听:", receiver.tileMapToList(neededMap))
 		sum := 0
 		for _, count := range neededMap {
 			sum += count
@@ -103,35 +109,35 @@ func (receiver *GamePlayerAI) SendTile() Tile {
 		if sum > maxNeedCount {
 			maxNeedCount = sum
 			uselessTile = tile
+
+			//fmt.Println("发现更大的,扔:", uselessTile, " 共可用:", sum)
 		}
 
-		//receiver.HandTiles = old
-		receiver.HandTiles = append(list, tile)
-		sort.Sort(receiver.HandTiles)
+		//sort.Sort(receiver.HandTiles)
 	}
 
 	if maxNeedCount < 1 {
 		// 如果找不到一个合适的可以扔的牌, 那么扔一张影响最小的
-		uselessTile, receiver.HandTiles = receiver.getMostUselessTile(receiver.HandTiles)
+		uselessTile, receiver.HandTiles = receiver.getMostUselessTile(receiver.HandTiles.copy())
 	} else {
-		receiver.HandTiles, _ = receiver.removeSpecSameOnce(receiver.HandTiles, uselessTile, 1)
+		receiver.HandTiles, _ = receiver.removeSpecSameOnce(receiver.HandTiles.copy(), uselessTile, 1)
 	}
 
 	// 更新当前需要的牌
 	receiver.NeededTiles = map[Tile]PlayerOperation{}
-	neededMap := receiver.getWinNeededTiles(receiver.HandTiles)
+	neededMap := receiver.getWinNeededTiles(receiver.HandTiles.copy())
 	for tile := range neededMap {
 		receiver.NeededTiles[tile] = OperationWin
 	}
 
-	list := receiver.getGangNeededTiles(receiver.HandTiles)
+	list := receiver.getGangNeededTiles(receiver.HandTiles.copy())
 	for _, tile := range list {
 		if _, ok := receiver.NeededTiles[tile]; !ok {
 			receiver.NeededTiles[tile] = OperationGang
 		}
 	}
 
-	list = receiver.getPengNeededTiles(receiver.HandTiles)
+	list = receiver.getPengNeededTiles(receiver.HandTiles.copy())
 	for _, tile := range list {
 		if op, ok := receiver.NeededTiles[tile]; !ok {
 			receiver.NeededTiles[tile] = OperationPeng
@@ -143,10 +149,10 @@ func (receiver *GamePlayerAI) SendTile() Tile {
 			a2 := Tile{tileType: tile.tileType, tileNum: tile.tileNum + 2}
 
 			newList := list
-			newList, _ = receiver.removeSpecSameOnce(newList, b2, 3)
-			newList, _ = receiver.removeSpecSameOnce(newList, b1, 3)
-			newList, _ = receiver.removeSpecSameOnce(newList, a1, 3)
-			newList, _ = receiver.removeSpecSameOnce(newList, a2, 3)
+			newList, _ = receiver.removeSpecSameOnce(newList.copy(), b2, 3)
+			newList, _ = receiver.removeSpecSameOnce(newList.copy(), b1, 3)
+			newList, _ = receiver.removeSpecSameOnce(newList.copy(), a1, 3)
+			newList, _ = receiver.removeSpecSameOnce(newList.copy(), a2, 3)
 
 			if receiver.checkHasLineInList(tile, newList) {
 				receiver.NeededTiles[tile] = OperationPeng

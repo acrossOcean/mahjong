@@ -104,7 +104,7 @@ func TestCommonGamePlayer_getWinNeededTiles(t *testing.T) {
 	ai = NewAI(gm)
 
 	afterMap1 := ai.getWinNeededTiles(list1)
-	afterList1 := tileMapToList(afterMap1)
+	afterList1 := ai.tileMapToList(afterMap1)
 	sort.Sort(afterList1)
 	sort.Sort(list1Need)
 	assert.Equal(t, afterList1, list1Need)
@@ -126,7 +126,7 @@ func TestCommonGamePlayer_getWinNeededTiles(t *testing.T) {
 	ai = NewAI(gm)
 
 	afterMap2 := ai.getWinNeededTiles(list2)
-	afterList2 := tileMapToList(afterMap2)
+	afterList2 := ai.tileMapToList(afterMap2)
 	sort.Sort(afterList2)
 	sort.Sort(list2Need)
 	assert.Equal(t, afterList2, list2Need)
@@ -148,7 +148,7 @@ func TestCommonGamePlayer_getWinNeededTiles(t *testing.T) {
 	ai = NewAI(gm)
 
 	afterMap3 := ai.getWinNeededTiles(list3)
-	afterList3 := tileMapToList(afterMap3)
+	afterList3 := ai.tileMapToList(afterMap3)
 	sort.Sort(afterList3)
 	sort.Sort(list3Need)
 	assert.Equal(t, afterList3, list3Need)
@@ -170,7 +170,7 @@ func TestCommonGamePlayer_getWinNeededTiles(t *testing.T) {
 	ai = NewAI(gm)
 
 	afterMap4 := ai.getWinNeededTiles(list4)
-	afterList4 := tileMapToList(afterMap4)
+	afterList4 := ai.tileMapToList(afterMap4)
 	sort.Sort(afterList4)
 	sort.Sort(list4Need)
 	assert.Equal(t, afterList4, list4Need)
@@ -712,23 +712,23 @@ func TestCommonGamePlayer_checkIsAllThree(t *testing.T) {
 func TestCommonGamePlayer_getMostUselessTile(t *testing.T) {
 	ai := newAIPlayer()
 
-	//list1 := TileList{
-	//	NewTile(TileTypeWind, 1),
-	//	NewTile(TileTypeBamboo, 1),
-	//}
-	//
-	//list2 := TileList{
-	//	NewTile(TileTypeWind, 1),
-	//	NewTile(TileTypeWind, 1),
-	//	NewTile(TileTypeBamboo, 1),
-	//}
-	//
-	//list3 := TileList{
-	//	NewTile(TileTypeWind, 1),
-	//	NewTile(TileTypeWind, 1),
-	//	NewTile(TileTypeBamboo, 2),
-	//	NewTile(TileTypeBamboo, 3),
-	//}
+	list1 := TileList{
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeBamboo, 1),
+	}
+
+	list2 := TileList{
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeBamboo, 1),
+	}
+
+	list3 := TileList{
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeWind, 1),
+		NewTile(TileTypeBamboo, 2),
+		NewTile(TileTypeBamboo, 3),
+	}
 
 	list4 := TileList{
 		NewTile(TileTypeBamboo, 1),
@@ -737,33 +737,51 @@ func TestCommonGamePlayer_getMostUselessTile(t *testing.T) {
 		NewTile(TileTypeBamboo, 5),
 	}
 
-	//list5 := TileList{
-	//	NewTile(TileTypeBamboo, 1),
-	//	NewTile(TileTypeBamboo, 2),
-	//	NewTile(TileTypeBamboo, 3),
-	//	NewTile(TileTypeCharacter, 1),
-	//}
+	list5 := TileList{
+		NewTile(TileTypeBamboo, 1),
+		NewTile(TileTypeBamboo, 2),
+		NewTile(TileTypeBamboo, 3),
+		NewTile(TileTypeCharacter, 1),
+	}
 
-	//tile1, _ := ai.getMostUselessTile(list1)
-	//assert.Equal(t, tile1, NewTile(TileTypeWind, 1))
-	//
-	//tile2, _ := ai.getMostUselessTile(list2)
-	//assert.Equal(t, tile2, NewTile(TileTypeBamboo, 1))
-	//
-	//tile3, _ := ai.getMostUselessTile(list3)
-	//assert.Equal(t, tile3, NewTile(TileTypeBamboo, 2))
+	tile1, _ := ai.getMostUselessTile(list1)
+	assert.Equal(t, tile1, NewTile(TileTypeWind, 1))
+
+	tile2, _ := ai.getMostUselessTile(list2)
+	assert.Equal(t, tile2, NewTile(TileTypeBamboo, 1))
+
+	tile3, _ := ai.getMostUselessTile(list3)
+	assert.Equal(t, tile3, NewTile(TileTypeBamboo, 2))
 
 	tile4, _ := ai.getMostUselessTile(list4)
 	assert.Equal(t, tile4, NewTile(TileTypeBamboo, 5))
 
-	//tile5, _ := ai.getMostUselessTile(list5)
-	//assert.Equal(t, tile5, NewTile(TileTypeCharacter, 1))
+	tile5, _ := ai.getMostUselessTile(list5)
+	assert.Equal(t, tile5, NewTile(TileTypeCharacter, 1))
 }
 
-func tileMapToList(m map[Tile]int) TileList {
-	var result TileList
-	for tile := range m {
-		result = append(result, tile)
+func TestCommonGamePlayer_getMostUselessTile1(t *testing.T) {
+	ai := newAIPlayer()
+
+	list := TileList{
+		NewTile(TileTypeCharacter, 2),
+		NewTile(TileTypeCharacter, 3),
+		NewTile(TileTypeCharacter, 4),
+		NewTile(TileTypeCharacter, 4),
+		NewTile(TileTypeCharacter, 4),
+		NewTile(TileTypeCharacter, 5),
+		NewTile(TileTypeCharacter, 8),
+		NewTile(TileTypeCharacter, 9),
+		NewTile(TileTypeCharacter, 9),
+		NewTile(TileTypeBamboo, 2),
+		NewTile(TileTypeBamboo, 3),
+		NewTile(TileTypeBamboo, 5),
+		NewTile(TileTypeDot, 2),
+		NewTile(TileTypeDot, 3),
 	}
-	return result
+
+	should := NewTile(TileTypeBamboo, 5)
+
+	tile, _ := ai.getMostUselessTile(list)
+	assert.Equal(t, tile, should)
 }
